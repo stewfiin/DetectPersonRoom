@@ -1,0 +1,28 @@
+# Python & Virtualenv
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Sensitive files & images / snapshots
+snapshot_violation.jpg
+*.jpg
+*.jpeg
+*.png
+.env
+
+# Video test files
+*.mp4
+*.avi
+*.mkv
+
+# YOLO model weights (auto-downloaded on run)
+*.pt
+
+# IDE & OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+*.log

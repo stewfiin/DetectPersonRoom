@@ -1,0 +1,27 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto_broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    entrypoint: >
+      sh -c "
+      echo 'listener 1883' > /mosquitto/config/mosquitto.conf;
+      echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf;
+      /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf
+      "
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered_instance
+    restart: unless-stopped
+    ports:
+      - "1880:1880"
+    volumes:
+      - node_red_data:/data
+    depends_on:
+      - mosquitto
+
+volumes:
+  node_red_data:
