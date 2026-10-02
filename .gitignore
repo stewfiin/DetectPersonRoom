@@ -11,6 +11,8 @@ snapshot_violation.jpg
 *.jpeg
 *.png
 .env
+.env.*
+!*.example
 
 # Video test files
 *.mp4
@@ -19,6 +21,11 @@ snapshot_violation.jpg
 
 # YOLO model weights (auto-downloaded on run)
 *.pt
+
+# Local testing, batch duplicates & Node-RED dumps
+nodered_current.json
+run-video.bat
+test_*.py
 
 # IDE & OS
 .vscode/

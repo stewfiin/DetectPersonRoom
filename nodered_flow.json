@@ -1,13 +1,13 @@
 [
     {
-        "id": "genset_tab",
+        "id": "4826e667adef6626",
         "type": "tab",
         "label": "Genset Room Detector Alert",
         "disabled": false,
-        "info": "Menerima payload MQTT dari detector.py dan mengirimkan notifikasi foto screenshot ke Telegram Bot jika terjadi pelanggaran Two-Person Rule."
+        "info": "Menerima sinyal ALERT dari detector.py (yang sudah lolos toleransi 5 detik) dan langsung mengirim foto screenshot ke Telegram Bot."
     },
     {
-        "id": "mqtt_broker_config",
+        "id": "10290144a15f04de",
         "type": "mqtt-broker",
         "name": "Mosquitto Local",
         "broker": "mosquitto",
@@ -21,14 +21,14 @@
         "autoUnsubscribe": true
     },
     {
-        "id": "mqtt_in_occupancy",
+        "id": "3d8337967df52a2b",
         "type": "mqtt in",
-        "z": "genset_tab",
+        "z": "4826e667adef6626",
         "name": "Genset Occupancy Topic",
         "topic": "genset/room/occupancy",
         "qos": "1",
         "datatype": "json",
-        "broker": "mqtt_broker_config",
+        "broker": "10290144a15f04de",
         "nl": false,
         "rap": true,
         "rh": 0,
@@ -37,37 +37,37 @@
         "y": 140,
         "wires": [
             [
-                "check_violation_node",
-                "debug_mqtt_payload"
+                "adf5a7261a44ec62",
+                "5623db3a2bd9ab7b"
             ]
         ]
     },
     {
-        "id": "check_violation_node",
+        "id": "adf5a7261a44ec62",
         "type": "function",
-        "z": "genset_tab",
-        "name": "Cek Pelanggaran & Siapkan Foto Telegram",
-        "func": "// ================= PENGATURAN TELEGRAM ================\nconst TELEGRAM_BOT_TOKEN = \"ISI_DENGAN_BOT_TOKEN_ANDA\"; // Contoh: 123456789:ABCdef...\nconst TELEGRAM_CHAT_ID   = \"ISI_DENGAN_CHAT_ID_ANDA\";   // Contoh: 987654321 atau -100123456789\nconst COOLDOWN_SECONDS   = 30; // Jeda notifikasi agar tidak spam (detik)\n// =====================================================\n\nlet count = msg.payload.count;\nlet isViolation = (count === 1) || msg.payload.violation === true;\nlet imageBase64 = msg.payload.image;\nlet timestamp = msg.payload.timestamp || Math.floor(Date.now() / 1000);\nlet timeStr = new Date(timestamp * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });\n\nlet lastAlertTime = context.get('lastAlertTime') || 0;\nlet now = Math.floor(Date.now() / 1000);\n\nif (isViolation) {\n    // Cek cooldown\n    if (now - lastAlertTime >= COOLDOWN_SECONDS) {\n        context.set('lastAlertTime', now);\n\n        let captionText = `🚨 <b>PERINGATAN RUANG GENSET</b> 🚨\\n` +\n                          `━━━━━━━━━━━━━━━━━━━━━\\n` +\n                          `⚠️ <b>Pelanggaran Two-Person Rule!</b>\\n` +\n                          `👤 <b>Jumlah Orang:</b> 1 Orang (Sendirian)\\n` +\n                          `🕒 <b>Waktu:</b> ${timeStr} WIB\\n` +\n                          `📍 <b>Lokasi:</b> Generator Room\\n` +\n                          `━━━━━━━━━━━━━━━━━━━━━\\n` +\n                          `<i>Segera kirimkan personel pendamping demi keselamatan kerja (K3).</i>`;\n\n        // Jika payload menyertakan screenshot (base64 image)\n        if (imageBase64) {\n            let boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);\n            let imgBuffer = Buffer.from(imageBase64, 'base64');\n            let parts = [];\n\n            // Parameter chat_id\n            parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"chat_id\"\\r\\n\\r\\n${TELEGRAM_CHAT_ID}\\r\\n`));\n            // Parameter caption\n            parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"caption\"\\r\\n\\r\\n${captionText}\\r\\n`));\n            // Parameter parse_mode\n            parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"parse_mode\"\\r\\n\\r\\nHTML\\r\\n`));\n            // File photo (multipart binary)\n            parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"photo\"; filename=\"snapshot_violation.jpg\"\\r\\nContent-Type: image/jpeg\\r\\n\\r\\n`));\n            parts.push(imgBuffer);\n            parts.push(Buffer.from(`\\r\\n--${boundary}--\\r\\n`));\n\n            msg.url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;\n            msg.headers = { 'Content-Type': `multipart/form-data; boundary=${boundary}` };\n            msg.payload = Buffer.concat(parts);\n            return msg;\n        } else {\n            // Fallback pesan teks biasa\n            msg.url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;\n            msg.headers = { 'Content-Type': 'application/json' };\n            msg.payload = {\n                chat_id: TELEGRAM_CHAT_ID,\n                text: captionText,\n                parse_mode: 'HTML'\n            };\n            return msg;\n        }\n    } else {\n        node.warn(`Pelanggaran terdeteksi tapi masih dalam cooldown (${COOLDOWN_SECONDS}s).`);\n        return null;\n    }\n}\n\nreturn null;",
+        "z": "4826e667adef6626",
+        "name": "Evaluasi Pelanggaran & Kirim Foto Telegram",
+        "func": "// ================= PENGATURAN TELEGRAM ================\nconst TELEGRAM_BOT_TOKEN = \"YOUR_TELEGRAM_BOT_TOKEN\";\nconst TELEGRAM_CHAT_ID   = \"YOUR_TELEGRAM_CHAT_ID\";\n// =====================================================\n\n// Hanya proses jika payload adalah sinyal ALERT dari Python\nif (msg.payload && msg.payload.alert === true) {\n    let imageBase64 = msg.payload.image;\n    let timestamp = msg.payload.timestamp || Math.floor(Date.now() / 1000);\n    let timeStr = new Date(timestamp * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });\n    let roomName = msg.payload.room_name || \"Ruang Generator\";\n\n    let captionText = `🚨 <b>PERINGATAN RUANG GENSET</b> 🚨\\n` +\n                      `━━━━━━━━━━━━━━━━━━━━━\\n` +\n                      `⚠️ <b>Pelanggaran Two-Person Rule!</b>\\n` +\n                      `👤 <b>Status:</b> 1 Orang (Melebihi batas toleransi 5 detik)\\n` +\n                      `🕒 <b>Waktu:</b> ${timeStr} WIB\\n` +\n                      `📍 <b>Lokasi:</b> ${roomName}\\n` +\n                      `━━━━━━━━━━━━━━━━━━━━━\\n` +\n                      `<i>Segera kirimkan personel pendamping demi keselamatan kerja (K3)!</i>`;\n\n    let alertMsg = { method: \"POST\" };\n\n    if (imageBase64) {\n        let boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);\n        let imgBuffer = Buffer.from(imageBase64, 'base64');\n        let parts = [];\n\n        parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"chat_id\"\\r\\n\\r\\n${TELEGRAM_CHAT_ID}\\r\\n`));\n        parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"caption\"\\r\\n\\r\\n${captionText}\\r\\n`));\n        parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"parse_mode\"\\r\\n\\r\\nHTML\\r\\n`));\n        parts.push(Buffer.from(`--${boundary}\\r\\nContent-Disposition: form-data; name=\"photo\"; filename=\"violation.jpg\"\\r\\nContent-Type: image/jpeg\\r\\n\\r\\n`));\n        parts.push(imgBuffer);\n        parts.push(Buffer.from(`\\r\\n--${boundary}--\\r\\n`));\n\n        alertMsg.url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;\n        alertMsg.headers = { 'Content-Type': `multipart/form-data; boundary=${boundary}` };\n        alertMsg.payload = Buffer.concat(parts);\n        return alertMsg;\n    } else {\n        alertMsg.url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;\n        alertMsg.headers = { 'Content-Type': 'application/json' };\n        alertMsg.payload = {\n            chat_id: TELEGRAM_CHAT_ID,\n            text: captionText,\n            parse_mode: 'HTML'\n        };\n        return alertMsg;\n    }\n}\n\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 490,
+        "x": 480,
         "y": 140,
         "wires": [
             [
-                "http_request_telegram",
-                "debug_telegram_request"
+                "46b981b84052b18c",
+                "2da6739f13d87e5c"
             ]
         ]
     },
     {
-        "id": "http_request_telegram",
+        "id": "46b981b84052b18c",
         "type": "http request",
-        "z": "genset_tab",
-        "name": "Kirim Foto ke Telegram",
+        "z": "4826e667adef6626",
+        "name": "Kirim ke Telegram Bot",
         "method": "POST",
         "ret": "obj",
         "paytoqs": "ignore",
@@ -79,20 +79,20 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 810,
+        "x": 780,
         "y": 140,
         "wires": [
             [
-                "debug_telegram_response"
+                "76a26324819dfb29"
             ]
         ]
     },
     {
-        "id": "debug_mqtt_payload",
+        "id": "5623db3a2bd9ab7b",
         "type": "debug",
-        "z": "genset_tab",
+        "z": "4826e667adef6626",
         "name": "Debug MQTT",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -105,11 +105,11 @@
         "wires": []
     },
     {
-        "id": "debug_telegram_request",
+        "id": "2da6739f13d87e5c",
         "type": "debug",
-        "z": "genset_tab",
+        "z": "4826e667adef6626",
         "name": "Debug Alert Payload",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -117,14 +117,14 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
+        "x": 760,
         "y": 220,
         "wires": []
     },
     {
-        "id": "debug_telegram_response",
+        "id": "76a26324819dfb29",
         "type": "debug",
-        "z": "genset_tab",
+        "z": "4826e667adef6626",
         "name": "Response Telegram",
         "active": true,
         "tosidebar": true,
@@ -134,7 +134,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1070,
+        "x": 1040,
         "y": 140,
         "wires": []
     }
